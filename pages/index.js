@@ -5,6 +5,9 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-blue-600 text-white p-4">
         <nav className="flex justify-between items-center max-w-6xl mx-auto">
+  <Link href="/dashboard" className="hover:underline">
+    Tableau de bord
+  </Link>
           <Link href="/" className="text-2xl font-bold">
             Plateforme Éducative IA
           </Link>
