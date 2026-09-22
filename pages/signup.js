@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -15,15 +15,29 @@ export default function Signup() {
     e.preventDefault();
     setError('');
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push('/login');
+      // Créer l'utilisateur dans Firebase Auth
+     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+const user = userCredential.user;
+
+      // Créer un profil utilisateur dans Firestore
+
+await setDoc(doc(db, 'users', user.uid), {
+  uid: user.uid,
+  name: name,
+  email: user.email,
+  subscription: 'Basique',
+  createdAt: new Date().toISOString(),
+  lastLogin: new Date().toISOString(),
+});
+
+router.push('/dashboard');
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         setError('Cet email est déjà utilisé.');
       } else if (err.code === 'auth/weak-password') {
         setError('Le mot de passe doit contenir au moins 6 caractères.');
       } else {
-        setError('Une erreur est survenue. Veuillez réessayer.');
+       setError('Une erreur est survenue. Veuillez réessayer.');
       }
       console.error(err);
     }
@@ -91,3 +105,4 @@ export default function Signup() {
     </div>
   );
 }
+
