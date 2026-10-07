@@ -1,5 +1,5 @@
-import stripe from '../../../lib/stripe';
-import { db } from '../../../lib/firebase';
+import stripe from '../../lib/stripe';
+import { db } from '../../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
 export default async function handler(req, res) {
