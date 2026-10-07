@@ -1,8 +1,12 @@
-
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider
+} from 'firebase/auth';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,11 +14,33 @@ export default function Login() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  const updateLastLogin = async (user) => {
+    const userRef = doc(db, 'users', user.uid);
+
+    await setDoc(
+      userRef,
+      {
+        lastLogin: new Date().toISOString()
+      },
+      { merge: true }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const user = userCredential.user;
+
+      await updateLastLogin(user);
+
       router.push('/');
     } catch (err) {
       setError('Email ou mot de passe incorrect.');
@@ -24,8 +50,14 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
+
     try {
-      await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider);
+
+      const user = userCredential.user;
+
+      await updateLastLogin(user);
+
       router.push('/');
     } catch (err) {
       setError('Échec de la connexion avec Google.');
@@ -36,13 +68,25 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Connexion</h1>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Connexion
+        </h1>
+
+        {error && (
+          <p className="text-red-500 text-center mb-4">
+            {error}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Email
             </label>
+
             <input
               type="email"
               id="email"
@@ -52,10 +96,15 @@ export default function Login() {
               required
             />
           </div>
+
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Mot de passe
             </label>
+
             <input
               type="password"
               id="password"
@@ -65,12 +114,14 @@ export default function Login() {
               required
             />
           </div>
+
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Se connecter
           </button>
+
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -79,9 +130,13 @@ export default function Login() {
             Se connecter avec Google
           </button>
         </form>
+
         <p className="text-center mt-4">
           Pas encore de compte ?{' '}
-          <a href="/signup" className="text-blue-600 hover:underline">
+          <a
+            href="/signup"
+            className="text-blue-600 hover:underline"
+          >
             S'inscrire
           </a>
         </p>
